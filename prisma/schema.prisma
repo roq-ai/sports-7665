@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions      = [pgcrypto]
+}
+
+model administrator {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String    @db.Uuid
+  company_id   String    @db.Uuid
+  admin_since  DateTime? @db.Timestamp(6)
+  admin_until  DateTime? @db.Timestamp(6)
+  access_level String?   @db.VarChar
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  updated_at   DateTime  @default(now()) @db.Timestamp(6)
+  company      company   @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user         user      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model company {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description   String?         @db.VarChar
+  name          String          @db.VarChar(255)
+  created_at    DateTime        @default(now()) @db.Timestamp(6)
+  updated_at    DateTime        @default(now()) @db.Timestamp(6)
+  user_id       String          @db.Uuid
+  tenant_id     String          @db.VarChar(255)
+  administrator administrator[]
+  user          user            @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner         owner[]
+  product       product[]
+}
+
+model order {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String    @db.Uuid
+  product_id    String    @db.Uuid
+  quantity      Int?
+  total_price   Int?
+  order_date    DateTime? @db.Timestamp(6)
+  delivery_date DateTime? @db.Timestamp(6)
+  created_at    DateTime  @default(now()) @db.Timestamp(6)
+  updated_at    DateTime  @default(now()) @db.Timestamp(6)
+  product       product   @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user          user      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model owner {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String    @db.Uuid
+  company_id           String    @db.Uuid
+  ownership_percentage Int?
+  start_date           DateTime? @db.Timestamp(6)
+  end_date             DateTime? @db.Timestamp(6)
+  created_at           DateTime  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime  @default(now()) @db.Timestamp(6)
+  company              company   @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                 user      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model product {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.VarChar
+  description String?  @db.VarChar
+  price       Int?
+  company_id  String   @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  order       order[]
+  company     company  @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String          @unique @db.VarChar(255)
+  firstName     String?         @db.VarChar(255)
+  lastName      String?         @db.VarChar(255)
+  roq_user_id   String          @db.VarChar(255)
+  tenant_id     String          @db.VarChar(255)
+  created_at    DateTime        @default(now()) @db.Timestamp(6)
+  updated_at    DateTime        @default(now()) @db.Timestamp(6)
+  administrator administrator[]
+  company       company[]
+  order         order[]
+  owner         owner[]
+}
